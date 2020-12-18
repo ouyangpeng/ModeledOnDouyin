@@ -6,9 +6,9 @@ import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.VideoView
 import androidx.viewpager.widget.PagerAdapter
 import com.csdn.oyp.douyin.R
+import com.csdn.oyp.douyin.widget.TextureVideoView
 import java.util.*
 
 class ViewPagerAdapter(
@@ -34,7 +34,7 @@ class ViewPagerAdapter(
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val itemView = View.inflate(context, R.layout.item_view_pager, null)
         val imgThumb = itemView.findViewById<ImageView>(R.id.img_thumb)
-        val videoView = itemView.findViewById<VideoView>(R.id.video_view)
+        val videoView = itemView.findViewById<TextureVideoView>(R.id.video_view)
         val imgPlay = itemView.findViewById<ImageView>(R.id.img_play)
         imgThumb.setImageResource(imgArray[position])
         videoView.setVideoURI(Uri.parse("android.resource://" + context.packageName + "/" + videoArray[position]))
@@ -44,9 +44,6 @@ class ViewPagerAdapter(
             imgThumb.animate().alpha(0f).setDuration(200).start()
             false
         }
-
-        videoView.setZOrderMediaOverlay(true)
-        videoView.setZOrderOnTop(true)
 
         // 如果是第一个View，直接播放，不然会黑屏
         // 其他的View，滑动过去的时候，再播放，不然滑动过去的时候播放的是不是第一帧
@@ -76,13 +73,8 @@ class ViewPagerAdapter(
     }
 
     override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {
+        Log.d(TAG, "destroyItem() position = $position")
         val itemView = `object` as View
-        val videoView = itemView.findViewById<VideoView>(R.id.video_view)
-        val imgThumb = itemView.findViewById<ImageView>(R.id.img_thumb)
-        val imgPlay = itemView.findViewById<ImageView>(R.id.img_play)
-        videoView.stopPlayback()
-        imgThumb.animate().alpha(1f).start()
-        imgPlay.animate().alpha(0f).start()
         container.removeView(itemView)
     }
 

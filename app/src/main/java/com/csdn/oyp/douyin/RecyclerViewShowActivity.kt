@@ -8,13 +8,13 @@ import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.RelativeLayout
-import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.OrientationHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.csdn.oyp.douyin.adapter.MyRecyclerViewAdapter
 import com.csdn.oyp.douyin.widget.MyLayoutManager
 import com.csdn.oyp.douyin.widget.OnViewPagerListener
+import com.csdn.oyp.douyin.widget.TextureVideoView
 
 class RecyclerViewShowActivity : AppCompatActivity() {
     private var mRecyclerView: RecyclerView? = null
@@ -59,7 +59,7 @@ class RecyclerViewShowActivity : AppCompatActivity() {
 
     private fun releaseVideo(index: Int) {
         val itemView = mRecyclerView!!.getChildAt(index)
-        val videoView = itemView.findViewById<VideoView>(R.id.video_view)
+        val videoView = itemView.findViewById<TextureVideoView>(R.id.video_view)
         val imgThumb = itemView.findViewById<ImageView>(R.id.img_thumb)
         val imgPlay = itemView.findViewById<ImageView>(R.id.img_play)
         videoView.stopPlayback()
@@ -70,7 +70,7 @@ class RecyclerViewShowActivity : AppCompatActivity() {
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR1)
     private fun playVideo(position: Int) {
         val itemView = mRecyclerView!!.getChildAt(position)
-        val videoView = itemView.findViewById<VideoView>(R.id.video_view)
+        val videoView = itemView.findViewById<TextureVideoView>(R.id.video_view)
         val imgPlay = itemView.findViewById<ImageView>(R.id.img_play)
         val imgThumb = itemView.findViewById<ImageView>(R.id.img_thumb)
         val rootView = itemView.findViewById<RelativeLayout>(R.id.root_view)

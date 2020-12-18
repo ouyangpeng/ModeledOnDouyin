@@ -7,9 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.RelativeLayout
-import android.widget.VideoView
 import androidx.recyclerview.widget.RecyclerView
 import com.csdn.oyp.douyin.R
+import com.csdn.oyp.douyin.widget.TextureVideoView
 
 class MyRecyclerViewAdapter(private val mContext: Context) :
         RecyclerView.Adapter<MyRecyclerViewAdapter.ViewHolder>() {
@@ -44,9 +44,6 @@ class MyRecyclerViewAdapter(private val mContext: Context) :
             holder.img_thumb.setImageResource(imgs[index])
             holder.videoView.setVideoURI(Uri.parse("android.resource://" + mContext.packageName + "/" + videos[index]))
 
-            holder.videoView.setZOrderMediaOverlay(true)
-            holder.videoView.setZOrderOnTop(true)
-            
             index++
             if (index >= 7) {
                 index = 0
@@ -59,7 +56,7 @@ class MyRecyclerViewAdapter(private val mContext: Context) :
 
         inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             var img_thumb: ImageView
-            var videoView: VideoView
+            var videoView: TextureVideoView
             var img_play: ImageView
             var rootView: RelativeLayout
 

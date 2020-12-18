@@ -2,9 +2,8 @@ package com.csdn.oyp.douyin.widget
 
 import android.content.Context
 import android.util.AttributeSet
-import android.widget.VideoView
 
-class FullWindowVideoView : VideoView {
+class FullWindowVideoView : TextureVideoView {
     constructor(context: Context?) : super(context) {}
 
     constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {}

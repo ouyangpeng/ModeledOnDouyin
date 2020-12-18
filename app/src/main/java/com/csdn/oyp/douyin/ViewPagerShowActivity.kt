@@ -3,13 +3,15 @@ package com.csdn.oyp.douyin
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.VideoView
+import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager.widget.ViewPager.OnPageChangeListener
 import com.csdn.oyp.douyin.adapter.ViewPagerAdapter
 import com.csdn.oyp.douyin.utils.SizeConvertUtil
 import com.csdn.oyp.douyin.widget.SlidingIndicator
+import com.csdn.oyp.douyin.widget.TextureVideoView
 
 class ViewPagerShowActivity : AppCompatActivity() {
     private val imgs = intArrayOf(
@@ -73,7 +75,8 @@ class ViewPagerShowActivity : AppCompatActivity() {
                 // 参考自： ViewPager滑动到最后一页继续滑动   https://blog.csdn.net/daidaishuiping/article/details/68086727
                 if (videos.size - 1 == position && isPress && positionOffsetPixels == 0 && !isOpen) {
                     isOpen = true //防止多次添加activity
-                    val intent = Intent(this@ViewPagerShowActivity, RecyclerViewShowActivity::class.java)
+                    val intent =
+                        Intent(this@ViewPagerShowActivity, RecyclerViewShowActivity::class.java)
                     startActivity(intent)
                     finish()
                 }
@@ -82,10 +85,24 @@ class ViewPagerShowActivity : AppCompatActivity() {
             override fun onPageSelected(position: Int) {
                 Log.d(TAG, "onPageSelected() position= $position")
                 // 从缓存中拿到对应位置的view
-                val videoView: VideoView =
+                val videoView: TextureVideoView =
                     viewPagerAdapter!!.getIndexToView()[position]!!.findViewById(R.id.video_view)
+
+                // 将进度条拖动到开始
+                videoView.seekTo(0)
                 // 开始播放
                 videoView.start()
+
+                // 上一个播放的资源要去掉
+                if (position >= 1) {
+                    Log.d(
+                        TAG,
+                        """onPageSelected() position= $position, release the video of position=${position - 1}"""
+                    )
+                    val itemView: View? = viewPagerAdapter!!.getIndexToView()[position - 1]
+                    releaseVideo(itemView)
+                }
+
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -93,6 +110,16 @@ class ViewPagerShowActivity : AppCompatActivity() {
                 isPress = state == ViewPager.SCROLL_STATE_DRAGGING
             }
         })
+    }
+
+    private fun releaseVideo(itemView: View?) {
+        val videoViewPre = itemView?.findViewById<TextureVideoView>(R.id.video_view)
+        val imgThumbPre = itemView?.findViewById<ImageView>(R.id.img_thumb)
+        val imgPlayPre = itemView?.findViewById<ImageView>(R.id.img_play)
+        // 暂停
+        videoViewPre?.pause()
+        imgThumbPre?.animate()?.alpha(1f)?.start()
+        imgPlayPre?.animate()?.alpha(0f)?.start()
     }
 
     companion object {
