@@ -45,6 +45,9 @@ class ViewPagerAdapter(
             false
         }
 
+        videoView.setZOrderMediaOverlay(true)
+        videoView.setZOrderOnTop(true)
+
         // 如果是第一个View，直接播放，不然会黑屏
         // 其他的View，滑动过去的时候，再播放，不然滑动过去的时候播放的是不是第一帧
         if (position == 0) {
