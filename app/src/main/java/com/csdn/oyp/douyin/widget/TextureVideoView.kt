@@ -4,10 +4,7 @@ import android.content.Context
 import android.graphics.SurfaceTexture
 import android.media.AudioManager
 import android.media.MediaPlayer
-import android.media.MediaPlayer.OnBufferingUpdateListener
-import android.media.MediaPlayer.OnCompletionListener
-import android.media.MediaPlayer.OnPreparedListener
-import android.media.MediaPlayer.OnVideoSizeChangedListener
+import android.media.MediaPlayer.*
 import android.net.Uri
 import android.os.Build
 import android.util.AttributeSet
@@ -59,13 +56,14 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
     private var mOnCompletionListener: OnCompletionListener? = null
     private var mOnPreparedListener: OnPreparedListener? = null
     private var mCurrentBufferPercentage = 0
-    private var mOnErrorListener: MediaPlayer.OnErrorListener? = null
-    private var mOnInfoListener: MediaPlayer.OnInfoListener? = null
+    private var mOnErrorListener: OnErrorListener? = null
+    private var mOnInfoListener: OnInfoListener? = null
     private var mSeekWhenPrepared // recording the seek position while preparing
             = 0
     private var mCanPause = false
     private var mCanSeekBack = false
     private var mCanSeekForward = false
+    private var mAudioManager: AudioManager? = null
     private var mContext: Context? = null
     private var mSurfaceTexture: SurfaceTexture? = null
 
@@ -86,6 +84,19 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
         defStyleRes: Int
     ) : super(context, attrs, defStyleAttr, defStyleRes) {
         init()
+    }
+
+    private fun init() {
+        mVideoWidth = 0
+        mVideoHeight = 0
+        mContext = context
+        mAudioManager = mContext?.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        isFocusable = true
+        isFocusableInTouchMode = true
+        requestFocus()
+        mCurrentState = STATE_IDLE
+        mTargetState = STATE_IDLE
+        surfaceTextureListener = mSurfaceTextureListener
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -196,8 +207,7 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
             mMediaPlayer = null
             mCurrentState = STATE_IDLE
             mTargetState = STATE_IDLE
-            val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            am.abandonAudioFocus(null)
+            mAudioManager!!.abandonAudioFocus(null)
         }
     }
 
@@ -209,8 +219,11 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
         // we shouldn't clear the target state, because somebody might have
         // called start() previously
         release(false)
-        val am = mContext!!.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        am.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+        mAudioManager!!.requestAudioFocus(
+            null,
+            AudioManager.STREAM_MUSIC,
+            AudioManager.AUDIOFOCUS_GAIN
+        )
         try {
             mMediaPlayer = MediaPlayer()
             // TODO: create SubtitleController in MediaPlayer, but we need
@@ -243,13 +256,13 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
             Log.w(TAG, "Unable to open content: $mUri", ex)
             mCurrentState = STATE_ERROR
             mTargetState = STATE_ERROR
-            mErrorListener.onError(mMediaPlayer, MediaPlayer.MEDIA_ERROR_UNKNOWN, 0)
+            mErrorListener.onError(mMediaPlayer, MEDIA_ERROR_UNKNOWN, 0)
             return
         } catch (ex: IllegalArgumentException) {
             Log.w(TAG, "Unable to open content: $mUri", ex)
             mCurrentState = STATE_ERROR
             mTargetState = STATE_ERROR
-            mErrorListener.onError(mMediaPlayer, MediaPlayer.MEDIA_ERROR_UNKNOWN, 0)
+            mErrorListener.onError(mMediaPlayer, MEDIA_ERROR_UNKNOWN, 0)
             return
         } finally {
         }
@@ -272,14 +285,15 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
         }
     }
 
-    var mSizeChangedListener = OnVideoSizeChangedListener { mp, width, height ->
-        mVideoWidth = mp.videoWidth
-        mVideoHeight = mp.videoHeight
-        if (mVideoWidth != 0 && mVideoHeight != 0) {
-            setFixedSize(mVideoWidth, mVideoHeight)
-            requestLayout()
+    var mSizeChangedListener =
+        OnVideoSizeChangedListener { mp, width, height ->
+            mVideoWidth = mp.videoWidth
+            mVideoHeight = mp.videoHeight
+            if (mVideoWidth != 0 && mVideoHeight != 0) {
+                setFixedSize(mVideoWidth, mVideoHeight)
+                requestLayout()
+            }
         }
-    }
     var mPreparedListener = OnPreparedListener { mp ->
         mCurrentState = STATE_PREPARED
 
@@ -352,27 +366,29 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
             mOnCompletionListener!!.onCompletion(mMediaPlayer)
         }
     }
-    private val mInfoListener = MediaPlayer.OnInfoListener { mp, arg1, arg2 ->
-        if (mOnInfoListener != null) {
-            mOnInfoListener!!.onInfo(mp, arg1, arg2)
+    private val mInfoListener =
+        OnInfoListener { mp, arg1, arg2 ->
+            if (mOnInfoListener != null) {
+                mOnInfoListener!!.onInfo(mp, arg1, arg2)
+            }
+            true
         }
-        true
-    }
-    private val mErrorListener = MediaPlayer.OnErrorListener { mp, framework_err, impl_err ->
-        Log.d(TAG, "Error: $framework_err,$impl_err")
-        mCurrentState = STATE_ERROR
-        mTargetState = STATE_ERROR
-        if (mMediaController != null) {
-            mMediaController!!.hide()
-        }
+    private val mErrorListener =
+        OnErrorListener { mp, framework_err, impl_err ->
+            Log.d(TAG, "Error: $framework_err,$impl_err")
+            mCurrentState = STATE_ERROR
+            mTargetState = STATE_ERROR
+            if (mMediaController != null) {
+                mMediaController!!.hide()
+            }
 
-        /* If an error handler has been supplied, use it and finish. */if (mOnErrorListener != null) {
-        if (mOnErrorListener!!.onError(mMediaPlayer, framework_err, impl_err)) {
-            return@OnErrorListener true
+            /* If an error handler has been supplied, use it and finish. */if (mOnErrorListener != null) {
+            if (mOnErrorListener!!.onError(mMediaPlayer, framework_err, impl_err)) {
+                return@OnErrorListener true
+            }
         }
-    }
-        true
-    }
+            true
+        }
     private val mBufferingUpdateListener =
         OnBufferingUpdateListener { mp, percent -> mCurrentBufferPercentage = percent }
 
@@ -404,7 +420,7 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
      *
      * @param l The callback that will be run
      */
-    fun setOnErrorListener(l: MediaPlayer.OnErrorListener?) {
+    fun setOnErrorListener(l: OnErrorListener?) {
         mOnErrorListener = l
     }
 
@@ -414,13 +430,13 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
      *
      * @param l The callback that will be run
      */
-    fun setOnInfoListener(l: MediaPlayer.OnInfoListener?) {
+    fun setOnInfoListener(l: OnInfoListener?) {
         mOnInfoListener = l
     }
 
     /*
-         * release the media player in any state
-         */
+     * release the media player in any state
+     */
     private fun release(cleartargetstate: Boolean) {
         if (mMediaPlayer != null) {
             mMediaPlayer!!.reset()
@@ -430,8 +446,7 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
             if (cleartargetstate) {
                 mTargetState = STATE_IDLE
             }
-            val am = mContext!!.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            am.abandonAudioFocus(null)
+            mAudioManager!!.abandonAudioFocus(null)
         }
     }
 
@@ -483,6 +498,14 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
             }
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    private fun toggleMediaControlsVisiblity() {
+        if (mMediaController!!.isShowing) {
+            mMediaController!!.hide()
+        } else {
+            mMediaController!!.show()
+        }
     }
 
     override fun start() {
@@ -564,26 +587,6 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
             foo.release()
         }
         return mAudioSession
-    }
-
-    private fun toggleMediaControlsVisiblity() {
-        if (mMediaController!!.isShowing) {
-            mMediaController!!.hide()
-        } else {
-            mMediaController!!.show()
-        }
-    }
-
-    private fun init() {
-        mVideoWidth = 0
-        mVideoHeight = 0
-        isFocusable = true
-        isFocusableInTouchMode = true
-        requestFocus()
-        mCurrentState = STATE_IDLE
-        mTargetState = STATE_IDLE
-        mContext = context
-        surfaceTextureListener = mSurfaceTextureListener
     }
 
     private fun setFixedSize(width: Int, height: Int) {
