@@ -34,7 +34,7 @@ import java.io.IOException
  */
 open class TextureVideoView : TextureView, MediaPlayerControl {
     // settable by the client
-    private var mUri: Uri? = null
+    internal var mUri: Uri? = null
     private var mHeaders: Map<String, String>? = null
 
     // mCurrentState is a VideoView object's current state.
@@ -509,6 +509,7 @@ open class TextureVideoView : TextureView, MediaPlayerControl {
     }
 
     override fun start() {
+        Log.d(TAG,"start() mUri = ${mUri}" )
         if (isInPlaybackState) {
             mMediaPlayer!!.start()
             mCurrentState = STATE_PLAYING

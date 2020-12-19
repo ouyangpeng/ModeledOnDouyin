@@ -100,6 +100,6 @@ class RecyclerViewShowActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val TAG = "douyin"
+        private const val TAG = "RecyclerViewShowActivity"
     }
 }

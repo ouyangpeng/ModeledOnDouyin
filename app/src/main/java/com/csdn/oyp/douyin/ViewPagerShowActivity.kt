@@ -84,25 +84,31 @@ class ViewPagerShowActivity : AppCompatActivity() {
 
             override fun onPageSelected(position: Int) {
                 Log.d(TAG, "onPageSelected() position= $position")
+                var currentPosition = viewPager?.currentItem
+                Log.d(TAG, "onPageSelected() currentPosition= $currentPosition")
+
+                //获取左边的View
+                val mLeftItemView = viewPagerAdapter!!.getIndexToView()[currentPosition?.minus(1)]
+                //获取右边的View
+                val mRightItemView = viewPagerAdapter!!.getIndexToView()[currentPosition?.plus(1)]
+
+                // 暂停左右两边页面的视频播放
+                releaseVideo(mLeftItemView);
+                releaseVideo(mRightItemView);
+
+                Log.d(
+                    TAG,
+                    "onPageSelected() now play the video , currentPosition= $currentPosition"
+                )
                 // 从缓存中拿到对应位置的view
                 val videoView: TextureVideoView =
-                    viewPagerAdapter!!.getIndexToView()[position]!!.findViewById(R.id.video_view)
-
+                    viewPagerAdapter!!.getIndexToView()[currentPosition]!!.findViewById(R.id.video_view)
+                // 将进度条拖动到开始
                 // 将进度条拖动到开始
                 videoView.seekTo(0)
                 // 开始播放
+                // 开始播放
                 videoView.start()
-
-                // 上一个播放的资源要去掉
-                if (position >= 1) {
-                    Log.d(
-                        TAG,
-                        """onPageSelected() position= $position, release the video of position=${position - 1}"""
-                    )
-                    val itemView: View? = viewPagerAdapter!!.getIndexToView()[position - 1]
-                    releaseVideo(itemView)
-                }
-
             }
 
             override fun onPageScrollStateChanged(state: Int) {
@@ -116,6 +122,11 @@ class ViewPagerShowActivity : AppCompatActivity() {
         val videoViewPre = itemView?.findViewById<TextureVideoView>(R.id.video_view)
         val imgThumbPre = itemView?.findViewById<ImageView>(R.id.img_thumb)
         val imgPlayPre = itemView?.findViewById<ImageView>(R.id.img_play)
+
+        Log.d(
+            TAG,
+            "releaseVideo()  itemView = ${itemView} ,videoViewPre = ${videoViewPre} , url =  ${videoViewPre?.mUri}"
+        )
         // 暂停
         videoViewPre?.pause()
         imgThumbPre?.animate()?.alpha(1f)?.start()
@@ -123,6 +134,6 @@ class ViewPagerShowActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val TAG = "Main2Activity"
+        private const val TAG = "ViewPagerShowActivity"
     }
 }
